@@ -1,5 +1,6 @@
 mod shipu;
 
+use dotenv::dotenv;
 use std::env;
 
 use serenity::async_trait;
@@ -13,7 +14,7 @@ use shipu::*;
 #[macro_use]
 extern crate rust_i18n;
 
-i18n!(fallback = "ru");
+i18n!("locales", fallback = "ru");
 
 #[group]
 #[commands(oleg_shipulin)]
@@ -26,6 +27,9 @@ impl EventHandler for Handler {}
 
 #[tokio::main]
 async fn main() {
+    dotenv().ok();
+    rust_i18n::set_locale("ru");
+
     let framework = StandardFramework::new()
         .configure(|c| c.prefix("~")) // set the bot's prefix to "~"
         .group(&GENERAL_GROUP);

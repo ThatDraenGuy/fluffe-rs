@@ -12,9 +12,9 @@ async fn oleg_shipulin(ctx: &Context, msg: &Message) -> CommandResult {
     let id = msg.author.id;
 
     if SHIPU_ID == id {
-        msg.reply(ctx, t!("shipu.is_shipu")).await?;
+        msg.reply(ctx, t!("msg.shipu.is_shipu")).await?;
     } else {
-        msg.reply(ctx, t!("shipu.not_shipu")).await?;
+        msg.reply(ctx, t!("msg.shipu.not_shipu")).await?;
     }
 
     Ok(())
