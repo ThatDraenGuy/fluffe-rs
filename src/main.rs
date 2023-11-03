@@ -1,13 +1,22 @@
+mod shipu;
+
 use std::env;
 
 use serenity::async_trait;
-use serenity::framework::standard::macros::{command, group};
-use serenity::framework::standard::{CommandResult, StandardFramework};
-use serenity::model::channel::Message;
+use serenity::framework::standard::StandardFramework;
+
+use serenity::framework::standard::macros::group;
 use serenity::prelude::*;
 
+use shipu::*;
+
+#[macro_use]
+extern crate rust_i18n;
+
+i18n!(fallback = "ru");
+
 #[group]
-#[commands(ping)]
+#[commands(oleg_shipulin)]
 struct General;
 
 struct Handler;
@@ -34,11 +43,4 @@ async fn main() {
     if let Err(why) = client.start().await {
         println!("An error occurred while running the client: {:?}", why);
     }
-}
-
-#[command]
-async fn ping(ctx: &Context, msg: &Message) -> CommandResult {
-    msg.reply(ctx, "Pong!").await?;
-
-    Ok(())
 }
