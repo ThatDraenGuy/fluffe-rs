@@ -1,9 +1,16 @@
 use rust_i18n::t;
 use serenity::{
-    framework::standard::{macros::command, CommandResult},
+    framework::standard::{
+        macros::{command, group},
+        CommandResult,
+    },
     model::prelude::*,
     prelude::*,
 };
+
+#[group]
+#[commands(oleg_shipulin)]
+pub struct SHIPU;
 
 const SHIPU_ID: UserId = UserId(373748719012806656);
 

@@ -1,4 +1,4 @@
-mod shipu;
+mod commands;
 
 use dotenv::dotenv;
 use std::env;
@@ -6,19 +6,14 @@ use std::env;
 use serenity::async_trait;
 use serenity::framework::standard::StandardFramework;
 
-use serenity::framework::standard::macros::group;
 use serenity::prelude::*;
 
-use shipu::*;
+use commands::*;
 
 #[macro_use]
 extern crate rust_i18n;
 
 i18n!("locales", fallback = "ru");
-
-#[group]
-#[commands(oleg_shipulin)]
-struct General;
 
 struct Handler;
 
@@ -30,9 +25,8 @@ async fn main() {
     dotenv().ok();
     rust_i18n::set_locale("ru");
 
-    let framework = StandardFramework::new()
-        .configure(|c| c.prefix("~")) // set the bot's prefix to "~"
-        .group(&GENERAL_GROUP);
+    let framework = StandardFramework::new().configure(|c| c.prefix("~")); // set the bot's prefix to "~"
+    let framework = register_commands(framework);
 
     // Login with a bot token from the environment
     let token = env::var("DISCORD_TOKEN").expect("token");
