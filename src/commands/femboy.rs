@@ -7,7 +7,20 @@ use serenity::{
     prelude::*,
 };
 
+use super::handle_user_error;
+use crate::service::ServiceError;
 use crate::{service::femboy::*, AppContext};
+
+pub fn handle_femboy_error(e: FemboyError) -> String {
+    match e {
+        FemboyError::AlreadyRegistered => {
+            t!("msg.femboy.register.error.already_registered")
+        }
+        FemboyError::NoGuildId => {
+            t!("msg.femboy.register.error.no_guild")
+        }
+    }
+}
 
 #[group]
 #[commands(femboy_register, femboy_leaderboard, femboy)]
@@ -26,15 +39,9 @@ async fn femboy_register(ctx: &Context, msg: &Message) -> CommandResult {
         msg.reply(
             ctx,
             match error {
-                FemboyError::AlreadyRegistered => {
-                    t!("msg.femboy.register.error.already_registered")
-                }
-                FemboyError::NoGuildId => {
-                    t!("msg.femboy.register.error.no_guild")
-                }
-                FemboyError::DbErr(err) => {
-                    t!("msg.common.error.db_err", msg = err.to_string())
-                }
+                ServiceError::DbErr(e) => t!("msg.common.error.db_err", msg = e.to_string()),
+                ServiceError::FemboyError(e) => handle_femboy_error(e),
+                ServiceError::UserError(e) => handle_user_error(e),
             },
         )
         .await?;

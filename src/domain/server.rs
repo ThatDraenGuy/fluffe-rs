@@ -20,4 +20,10 @@ impl Related<super::User> for Entity {
     }
 }
 
+impl Entity {
+    pub fn find_by_actual_id(actual_id: String) -> Select<Entity> {
+        Entity::find().filter(Column::ActualId.eq(actual_id))
+    }
+}
+
 impl ActiveModelBehavior for ActiveModel {}
