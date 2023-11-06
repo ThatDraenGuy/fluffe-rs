@@ -1,0 +1,31 @@
+_version: 1
+msg:
+  common:
+    error:
+      db_err: "Error when working with database 😡😡😡. Catch the error message and go tell DraenGuy that he's a loser: %{msg}"
+
+  femboy:
+    common:
+      error:
+        no_guild: "Could't find server id 😿"
+        no_femboy_found: "Couldn't find femboy 😿 (too real, huh 😭? I pray you all find a femboy in this life)"
+        no_user_found: "Look, femboy exists, but no user found 😿 (go kick the devs, it seems they ruined the database)"
+
+    register:
+      success: "Now you're playing in Femboys"
+      error:
+        already_registered: "You're already playing in Femboys, go check yourself for dementia"
+
+    choose:
+      success:
+        begin: ""
+        end: " was chose as femboy! They won %{wins_num} time(s) already and got %{winnings} cum(s) for that!"
+
+  user:
+    common:
+      error:
+        already_exists: "User already exists"
+
+  shipu:
+    is_shipu: "YOU'RE OLEG SHIPULIN 🔥🔥🔥🔥🔥"
+    not_shipu: "you're not oleg shipulin 😿"
