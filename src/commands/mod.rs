@@ -9,7 +9,7 @@ use self::{femboy::FEMBOY_GROUP, shipu::SHIPU_GROUP};
 
 fn handle_user_error(e: UserError) -> String {
     match e {
-        UserError::AlreadyExists => todo!(),
+        UserError::AlreadyExists => t!("msg.user.common.error.already_exists"),
     }
 }
 

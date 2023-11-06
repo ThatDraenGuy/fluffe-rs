@@ -1,4 +1,4 @@
-use sea_orm::entity::prelude::*;
+use sea_orm::{entity::prelude::*, JoinType, QuerySelect};
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel)]
 #[sea_orm(table_name = "femboys")]
@@ -22,6 +22,15 @@ pub enum Relation {
 impl Related<super::User> for Entity {
     fn to() -> RelationDef {
         Relation::User.def()
+    }
+}
+
+impl Entity {
+    pub fn find_by_server(server_actual_id: &str) -> Select<Self> {
+        Entity::find()
+            .inner_join(super::User)
+            .join(JoinType::InnerJoin, super::user::Relation::Server.def())
+            .filter(super::server::Column::ActualId.eq(server_actual_id))
     }
 }
 

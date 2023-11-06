@@ -775,6 +775,7 @@ name = "fluffe-rs"
 version = "0.1.0"
 dependencies = [
  "dotenv",
+ "rand",
  "rust-i18n",
  "sea-orm",
  "serenity",
