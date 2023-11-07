@@ -1,6 +1,7 @@
 use rand::Rng;
 use sea_orm::{
-    ActiveModelTrait, EntityTrait, IntoActiveModel, PaginatorTrait, QuerySelect, Set, TryIntoModel,
+    ActiveModelTrait, EntityTrait, IntoActiveModel, Order, PaginatorTrait, QueryOrder, QuerySelect,
+    Set, TryIntoModel,
 };
 use serenity::model::prelude::{GuildId, UserId};
 use thiserror::Error;
@@ -101,5 +102,26 @@ impl FemboyService {
 
     fn get_femboy_win_prize() -> i64 {
         rand::thread_rng().gen_range(10..=20)
+    }
+
+    pub async fn get_femboy_leaderboard(
+        ctx: &AppContext,
+        maybe_guild_id: Option<GuildId>,
+    ) -> Result<Vec<(femboy::Model, user::Model)>, ServiceError> {
+        let guild_id = maybe_guild_id.ok_or(FemboyError::NoGuildId)?;
+        let actual_server_id = guild_id.to_string();
+
+        Femboy::find_by_server(actual_server_id.as_str())
+            .order_by(femboy::Column::WinsNum, Order::Desc)
+            .select_also(User)
+            .all(&ctx.db)
+            .await?
+            .into_iter()
+            .map(|(femboy, maybe_user)| {
+                maybe_user
+                    .map(|user| (femboy, user))
+                    .ok_or(ServiceError::from(FemboyError::NoUserFound))
+            })
+            .collect()
     }
 }

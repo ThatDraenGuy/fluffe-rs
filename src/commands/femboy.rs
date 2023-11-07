@@ -60,8 +60,57 @@ async fn femboy_register(ctx: &Context, msg: &Message) -> CommandResult {
 }
 
 #[command]
-async fn femboy_leaderboard(_ctx: &Context, _msg: &Message) -> CommandResult {
-    todo!()
+#[allow(unused)]
+async fn femboy_leaderboard(ctx: &Context, msg: &Message) -> CommandResult {
+    let data = ctx.data.read().await;
+    let app_ctx = data
+        .get::<AppContext>()
+        .expect("Expected AppContext")
+        .lock()
+        .await;
+
+    match FemboyService::get_femboy_leaderboard(&app_ctx, msg.guild_id).await {
+        Err(error) => {
+            msg.reply(
+                ctx,
+                match error {
+                    ServiceError::DbErr(e) => t!("msg.common.error.db_err", msg = e.to_string()),
+                    ServiceError::FemboyError(e) => handle_femboy_error(e),
+                    ServiceError::UserError(e) => handle_user_error(e),
+                },
+            )
+            .await?;
+        }
+
+        Ok(leaderboard) => {
+            let guild = msg.guild(&ctx.cache).unwrap();
+
+            let mut response = MessageBuilder::new();
+
+            response
+                .push(t!("msg.femboy.leaderboard.success"))
+                .push("\n");
+
+            for (i, (femboy, user)) in leaderboard.iter().enumerate() {
+                let member = guild
+                    .member(&ctx.http, &UserId::from(user.discord_id.parse::<u64>()?))
+                    .await?;
+
+                response
+                    .push(t!(
+                        "msg.femboy.leaderboard.line",
+                        place = i,
+                        name = member.display_name(),
+                        wins_num = femboy.wins_num
+                    ))
+                    .push("\n");
+            }
+
+            msg.reply(ctx, response.build().trim()).await?;
+        }
+    }
+
+    Ok(())
 }
 
 #[command]
