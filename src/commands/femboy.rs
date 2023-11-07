@@ -71,12 +71,19 @@ async fn femboy_leaderboard(ctx: &Context, msg: &Message) -> CommandResult {
 
     match FemboyService::get_femboy_leaderboard(&app_ctx, msg.guild_id).await {
         Err(error) => {
-            msg.reply(ctx, "error").await?;
+            msg.reply(
+                ctx,
+                match error {
+                    ServiceError::DbErr(e) => t!("msg.common.error.db_err", msg = e.to_string()),
+                    ServiceError::FemboyError(e) => handle_femboy_error(e),
+                    ServiceError::UserError(e) => handle_user_error(e),
+                },
+            )
+            .await?;
         }
 
         Ok(leaderboard) => {
-			// I think the guild always exists at this point???
-			let guild = msg.guild(&ctx.cache).unwrap();
+            let guild = msg.guild(&ctx.cache).unwrap();
 
             let mut response = MessageBuilder::new();
 
@@ -85,17 +92,21 @@ async fn femboy_leaderboard(ctx: &Context, msg: &Message) -> CommandResult {
                 .push("\n");
 
             for (i, (femboy, user)) in leaderboard.iter().enumerate() {
+                let member = guild
+                    .member(&ctx.http, &UserId::from(user.discord_id.parse::<u64>()?))
+                    .await?;
+
                 response
                     .push(t!(
                         "msg.femboy.leaderboard.line",
                         place = i,
-                        username = guild.member(&ctx.http, &UserId::from(user.discord_id.parse::<u64>()?)).await?.user.name,
+                        name = member.display_name(),
                         wins_num = femboy.wins_num
                     ))
                     .push("\n");
             }
 
-            msg.reply(ctx, response).await?;
+            msg.reply(ctx, response.build().trim()).await?;
         }
     }
 

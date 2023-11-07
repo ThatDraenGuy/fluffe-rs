@@ -20,6 +20,10 @@ msg:
       success:
         begin: ""
         end: " was chose as femboy! They won %{wins_num} time(s) already and got %{winnings} cum(s) for that!"
+    
+    leaderboard:
+      success: "Femboy leaderboard:"
+      line: "%{place}. %{name}: %{wins_num}"
 
   user:
     common:

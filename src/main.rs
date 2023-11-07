@@ -52,7 +52,7 @@ async fn main() {
         .framework(framework)
         .await
         .expect("Error creating client");
-	
+
     // Connect to database
     let db = Database::connect(connection)
         .await

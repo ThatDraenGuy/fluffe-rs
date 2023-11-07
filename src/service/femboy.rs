@@ -111,15 +111,17 @@ impl FemboyService {
         let guild_id = maybe_guild_id.ok_or(FemboyError::NoGuildId)?;
         let actual_server_id = guild_id.to_string();
 
-        let leaderboard = Femboy::find_by_server(actual_server_id.as_str())
+        Femboy::find_by_server(actual_server_id.as_str())
             .order_by(femboy::Column::WinsNum, Order::Desc)
             .select_also(User)
-			.all(&ctx.db)
-			.await?
-			.iter()
-			.map(|(femboy, maybe_user)| (femboy.to_owned(), maybe_user.as_ref().unwrap().to_owned())) // TODO is this atrocity even remotely correct? also check for no user
-			.collect();
-
-        Ok(leaderboard)
+            .all(&ctx.db)
+            .await?
+            .into_iter()
+            .map(|(femboy, maybe_user)| {
+                maybe_user
+                    .map(|user| (femboy, user))
+                    .ok_or(ServiceError::from(FemboyError::NoUserFound))
+            })
+            .collect()
     }
 }

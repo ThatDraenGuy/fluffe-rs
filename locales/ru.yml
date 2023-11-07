@@ -22,8 +22,8 @@ msg:
         end: "! Он выиграл уже %{wins_num} раз(а) и получил за это %{winnings} cum(s)!"
     
     leaderboard:
-      success: "Таблица лидеров по фембоям:"
-      line: "%{place}. %{username}: %{wins_num}"
+      success: "Список фембой лидеров:"
+      line: "%{place}. %{name}: %{wins_num}"
 
   user:
     common:
