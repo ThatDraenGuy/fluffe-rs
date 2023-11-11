@@ -1,0 +1,46 @@
+name: Rust
+
+on:
+    push:
+        branches: [ "master" ]
+    pull_request:
+        branches: [ "master" ]
+
+jobs:
+    format:
+        runs-on: ubuntu-latest
+        steps:
+        - uses: actions/checkout@v3
+        - uses: dtolnay/rust-toolchain@stable
+          with:
+            components: rustfmt
+        - uses: mbrobbel/rustfmt-check@master
+          with:
+            token: ${{ secrets.GITHUB_TOKEN }}
+    
+    lint:
+        runs-on: ubuntu-latest
+        steps:
+        - uses: actions/checkout@v3
+        - uses: dtolnay/rust-toolchain@stable
+          with:
+            components: clippy
+        - uses: giraffate/clippy-action@v1
+          with:
+            github_token: ${{ secrets.GITHUB_TOKEN }}
+            clippy_flags: --all-features -- -Dwarnings
+        - run: cargo clippy --all-features -- -Dwarnings
+    
+    test:
+        runs-on: ubuntu-latest
+        steps:
+        - uses: actions/checkout@v3
+        - uses: dtolnay/rust-toolchain@stable
+        - run: cargo test --all-features
+    
+    build:
+        runs-on: ubuntu-latest
+        steps:
+        - uses: actions/checkout@v3
+        - uses: dtolnay/rust-toolchain@stable
+        - run: cargo build
