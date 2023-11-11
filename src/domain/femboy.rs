@@ -32,6 +32,11 @@ impl Entity {
             .join(JoinType::InnerJoin, super::user::Relation::Server.def())
             .filter(super::server::Column::ActualId.eq(server_actual_id))
     }
+
+    pub fn find_by_user(server_actual_id: &str, user_discord_id: &str) -> Select<Self> {
+        Self::find_by_server(server_actual_id)
+            .filter(super::user::Column::DiscordId.eq(user_discord_id))
+    }
 }
 
 impl ActiveModelBehavior for ActiveModel {}

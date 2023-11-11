@@ -124,4 +124,25 @@ impl FemboyService {
             })
             .collect()
     }
+
+    pub async fn find(
+        ctx: &AppContext,
+        maybe_guild_id: Option<GuildId>,
+        user_id: UserId,
+    ) -> Result<(femboy::Model, user::Model), ServiceError> {
+        let guild_id = maybe_guild_id.ok_or(FemboyError::NoGuildId)?;
+        let actual_server_id = guild_id.to_string();
+        let discord_user_id = user_id.to_string();
+
+        let (femboy, maybe_user) =
+            Femboy::find_by_user(actual_server_id.as_str(), discord_user_id.as_str())
+                .select_also(User)
+                .one(&ctx.db)
+                .await?
+                .ok_or(FemboyError::NoFemboyFound)?;
+
+        maybe_user
+            .map(|user| (femboy, user))
+            .ok_or(ServiceError::from(FemboyError::NoUserFound))
+    }
 }

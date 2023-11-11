@@ -18,12 +18,16 @@ msg:
 
     choose:
       success:
-        begin: ""
+        begin: "Femboy of the day is "
         end: " was chose as femboy! They won %{wins_num} time(s) already and got %{winnings} cum(s) for that!"
     
     leaderboard:
       success: "Femboy leaderboard:"
       line: "%{place}. %{name}: %{wins_num}"
+   
+    balance:
+      success: ", you have %{balance} cum(s)"
+
 
   user:
     common:

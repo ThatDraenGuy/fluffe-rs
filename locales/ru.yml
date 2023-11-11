@@ -24,6 +24,9 @@ msg:
     leaderboard:
       success: "Список фембой лидеров:"
       line: "%{place}. %{name}: %{wins_num}"
+    
+    balance:
+      success: " на твоём счету %{balance} cum(s)"
 
   user:
     common:
