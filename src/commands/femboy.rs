@@ -30,7 +30,7 @@ pub fn handle_femboy_error(e: FemboyError) -> String {
 }
 
 #[group]
-#[commands(femboy_register, femboy_leaderboard, femboy)]
+#[commands(femboy_register, femboy_leaderboard, femboy, balance)]
 pub struct FEMBOY;
 
 #[command]
@@ -60,7 +60,6 @@ async fn femboy_register(ctx: &Context, msg: &Message) -> CommandResult {
 }
 
 #[command]
-#[allow(unused)]
 async fn femboy_leaderboard(ctx: &Context, msg: &Message) -> CommandResult {
     let data = ctx.data.read().await;
     let app_ctx = data
@@ -143,6 +142,39 @@ async fn femboy(ctx: &Context, msg: &Message) -> CommandResult {
                     winnings = winnings,
                     wins_num = femboy.wins_num
                 ))
+                .build();
+
+            msg.channel_id.say(&ctx.http, response).await?;
+        }
+    }
+    Ok(())
+}
+
+#[command]
+async fn balance(ctx: &Context, msg: &Message) -> CommandResult {
+    let data = ctx.data.read().await;
+    let app_ctx = data
+        .get::<AppContext>()
+        .expect("Expected AppContext")
+        .lock()
+        .await;
+
+    match FemboyService::find(&app_ctx, msg.guild_id, msg.author.id).await {
+        Err(error) => {
+            msg.reply(
+                ctx,
+                match error {
+                    ServiceError::DbErr(e) => t!("msg.common.error.db_err", msg = e.to_string()),
+                    ServiceError::FemboyError(e) => handle_femboy_error(e),
+                    ServiceError::UserError(e) => handle_user_error(e),
+                },
+            )
+            .await?;
+        }
+        Ok((femboy, _)) => {
+            let response = MessageBuilder::new()
+                .mention(&msg.author.id)
+                .push(t!("msg.femboy.balance.success", balance = femboy.balance))
                 .build();
 
             msg.channel_id.say(&ctx.http, response).await?;
