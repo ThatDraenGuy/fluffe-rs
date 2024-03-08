@@ -1,4 +1,6 @@
 _version: 1
+commands:
+  /get_furry: "Скинуть фурри-картинку"
 msg:
   common:
     error:

@@ -1,4 +1,6 @@
 _version: 1
+commands:
+  /get_furry: "Send a furry picture"
 msg:
   common:
     error:
@@ -27,6 +29,7 @@ msg:
    
     balance:
       success: ", you have %{balance} cum(s)"
+
 
 
   user:
