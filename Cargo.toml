@@ -3,9 +3,14 @@ name = "fluffe-rs"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[workspace]
+members = [".", "entity", "migration"]
+
 
 [dependencies]
+entity = { path = "entity" }
+migration = { path = "migration" }
+
 teloxide = { version = "0.12", default-features = false, features = ["macros", "rustls", "ctrlc_handler"] }
 log = "0.4"
 pretty_env_logger = "0.5"
@@ -14,8 +19,15 @@ rust-i18n = "3.0.1"
 thiserror = "1.0"
 rand = "0.8.5"
 dotenvy = "0.15.7"
-diesel = "2.1.4"
+sea-orm = { version = "0.12", features = ["sqlx-postgres", "runtime-tokio-rustls"] }
 reqwest = { version = "0.11.24", default-features = false, features = ["rustls-tls"] }
 url = "2.5.0"
 html5tokenizer = "0.5.2"
 enum_dispatch = "0.3.12"
+
+[dependencies.sea-orm-migration]
+version = "0.12"
+features = [
+  "runtime-tokio-rustls",
+  "sqlx-postgres"
+]

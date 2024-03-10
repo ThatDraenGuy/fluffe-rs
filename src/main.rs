@@ -1,10 +1,15 @@
 use std::sync::Arc;
+use std::time::Duration;
 
+use fluffe_rs::handlers::*;
+use fluffe_rs::DbPool;
 use fluffe_rs::{
     command::{self, AppCommands},
     image::{reactor::ReactorRepository, ImageRepository},
     AppResult, FluffersBot,
 };
+use sea_orm::ConnectOptions;
+use sea_orm::Database;
 use teloxide::{prelude::*, types::ParseMode, utils::command::BotCommands};
 
 extern crate pretty_env_logger;
@@ -23,26 +28,31 @@ async fn main() {
 
     info!("Starting bot!");
 
+    let pool = setup_database_pool().await;
+
     let bot = Bot::from_env().parse_mode(ParseMode::Html);
     setup_commands(&bot)
         .await
         .expect("Couldn't setup commands!");
 
-    let handler = dptree::entry().branch(
-        Update::filter_message().branch(
-            dptree::entry()
-                .filter_command::<AppCommands>()
-                .endpoint(command::handle_command),
-        ),
-    );
+    let handler = dptree::entry()
+        .chain(dptree::filter_async(handle_update_logging))
+        .chain(dptree::filter_async(username_storage_handler))
+        .branch(
+            Update::filter_message().branch(
+                dptree::entry()
+                    .filter_command::<AppCommands>()
+                    .endpoint(command::handle_command),
+            ),
+        );
 
     let image_repository: ImageRepository = ReactorRepository::default().into();
     let image_repository = Arc::new(image_repository);
 
     Dispatcher::builder(bot, handler)
-        .dependencies(dptree::deps![image_repository])
+        .dependencies(dptree::deps![image_repository, pool])
         .enable_ctrlc_handler()
-        .default_handler(default_log_handler)
+        .default_handler(handle_unhandled_update_logging)
         .build()
         .dispatch()
         .await;
@@ -64,20 +74,20 @@ async fn setup_commands(bot: &FluffersBot) -> AppResult<()> {
     Ok(())
 }
 
-async fn default_log_handler(upd: Arc<Update>) {
-    let update_id = upd.id;
-    if let Some(user) = upd.user() {
-        let user_id = user.id;
-        if let Some(chat) = upd.chat() {
-            let chat_id = chat.id;
-            warn!("Unhandled update [{update_id}]: user: [{user_id}] chat: [{chat_id}]");
-        } else {
-            warn!("Unhandled update [{update_id}]: user: [{user_id}] ");
-        };
-    } else if let Some(chat) = upd.chat() {
-        let chat_id = chat.id;
-        warn!("Unhandled update [{update_id}]: chat: [{chat_id}]");
-    } else {
-        warn!("Unhandled update [{update_id}]: kind: {:?}", upd.kind);
-    }
+async fn setup_database_pool() -> DbPool {
+    let mut options =
+        ConnectOptions::new(std::env::var("DATABASE_URL").expect("No database url found!"));
+    options
+        .max_connections(10)
+        .min_connections(3)
+        .connect_timeout(Duration::from_secs(8))
+        .acquire_timeout(Duration::from_secs(8))
+        .idle_timeout(Duration::from_secs(8))
+        .max_lifetime(Duration::from_secs(8))
+        .sqlx_logging(true)
+        .sqlx_logging_level(log::LevelFilter::Trace);
+
+    Database::connect(options)
+        .await
+        .expect("Couldn't create database connection!")
 }
