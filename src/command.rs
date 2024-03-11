@@ -1,11 +1,14 @@
 use std::sync::Arc;
 
+use image::ImageBuffer;
 use teloxide::{
+    net::Download,
     payloads::SendMessageSetters,
     requests::{Requester, ResponseResult},
     types::{Message, UserId},
     utils::command::BotCommands,
 };
+use tokio::fs;
 
 use crate::{
     image::{ImageRepository, ImageRepositoryTrait},
@@ -64,8 +67,8 @@ async fn pet(db: &DbPool, bot: FluffersBot, msg: &Message, arg: &str) -> AppResu
             t!(
                 "msg.common.error.mention_argument",
                 command = "pet",
+                locale = get_language_code(msg),
                 mention = DEFAULT_MENTION,
-                locale = get_language_code(msg)
             ),
         )
         .reply_to_message_id(msg.id)
@@ -78,15 +81,36 @@ async fn pet(db: &DbPool, bot: FluffersBot, msg: &Message, arg: &str) -> AppResu
             msg.chat.id,
             t!(
                 "msg.common.error.unknown_username",
+                locale = get_language_code(msg),
                 mention = arg,
-                locale = get_language_code(msg)
             ),
         )
         .reply_to_message_id(msg.id)
         .await?;
         return Ok(());
     };
-    let _user_id = UserId(user.get_telegram_id());
+    let user_id = UserId(user.get_telegram_id());
+
+    let user_photos = bot.get_user_profile_photos(user_id).await?;
+    let Some(photo) = user_photos.photos.first().and_then(|photo| photo.first()) else {
+        bot.send_message(
+            msg.chat.id,
+            t!(
+                "msg.pet.error.no_photo",
+                locale = get_language_code(msg),
+                mention = arg,
+            ),
+        )
+        .reply_to_message_id(msg.id)
+        .await?;
+        return Ok(());
+    };
+
+    let file = bot.get_file(&photo.file.id).await?;
+
+    let mut image_buf = Vec::with_capacity(file.size as usize);
+
+    bot.download_file(&file.path, &mut image_buf).await?;
 
     Ok(())
 }

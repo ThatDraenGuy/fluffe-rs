@@ -1,5 +1,5 @@
-pub mod utils;
 pub mod handlers;
+pub mod utils;
 use sea_orm::DatabaseConnection;
 use teloxide::{adaptors::DefaultParseMode, prelude::*};
 
@@ -28,6 +28,8 @@ pub enum AppError {
     Request(#[from] reqwest::Error),
     #[error(transparent)]
     TeloxideRequest(#[from] teloxide::RequestError),
+    #[error(transparent)]
+    TeloxideDownload(#[from] teloxide::DownloadError),
     #[error(transparent)]
     Database(#[from] sea_orm::DbErr),
     #[error("No image")]

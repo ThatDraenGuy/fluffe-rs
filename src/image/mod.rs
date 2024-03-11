@@ -6,6 +6,7 @@ use teloxide::types::InputFile;
 
 use crate::AppResult;
 
+pub mod pet_gif_creator;
 pub mod reactor;
 
 #[enum_dispatch]

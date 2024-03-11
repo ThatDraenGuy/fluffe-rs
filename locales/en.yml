@@ -8,6 +8,9 @@ msg:
       db_err: "Error when working with database 😡😡😡. Catch the error message and go tell DraenGuy that he's a loser: %{msg}"
       mention_argument: "To use this command you need to mention someone, like this: \"/%{command} %{mention}\""
       unknown_username: "I don't know who %{mention} is, they don't talk to me(((("
+  pet:
+    error:
+      no_photo: "I can't find avatar of %{mention}((("  
 
   femboy:
     common:
