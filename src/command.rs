@@ -1,10 +1,11 @@
 use std::sync::Arc;
 
+use include_bytes_plus::include_bytes;
 use teloxide::{
     net::Download,
-    payloads::{SendAnimationSetters, SendMessageSetters},
+    payloads::{SendAnimationSetters, SendMessageSetters, SendStickerSetters},
     requests::{Requester, ResponseResult},
-    types::{Message, UserId},
+    types::{InputFile, Message, UserId},
     utils::command::BotCommands,
 };
 
@@ -21,6 +22,7 @@ use entity::prelude::*;
 pub enum AppCommands {
     GetFurry,
     Pet(String),
+    Shipu,
 }
 
 pub async fn handle_command(
@@ -36,6 +38,7 @@ pub async fn handle_command(
     let result = match cmd.clone() {
         AppCommands::GetFurry => get_furry(image_repository, bot, &msg).await,
         AppCommands::Pet(arg) => pet(&db, bot, &msg, &arg).await,
+        AppCommands::Shipu => shipu(bot, &msg).await,
     };
 
     match result {
@@ -126,6 +129,16 @@ async fn pet(db: &DbPool, bot: FluffersBot, msg: &Message, mention: &str) -> App
     )
     .reply_to_message_id(gif_msg.id)
     .await?;
+
+    Ok(())
+}
+
+const SHIPU_STICKER: [u8; 36758] = include_bytes!("resources/shipu.webp");
+
+async fn shipu(bot: FluffersBot, msg: &Message) -> AppResult<()> {
+    bot.send_sticker(msg.chat.id, InputFile::memory(&SHIPU_STICKER as &[u8]))
+        .reply_to_message_id(msg.id.0)
+        .await?;
 
     Ok(())
 }

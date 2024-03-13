@@ -6,11 +6,12 @@ use image::{
     imageops::{overlay, FilterType},
     DynamicImage, ImageFormat,
 };
+use include_bytes_plus::include_bytes;
 use teloxide::types::InputFile;
 
 use crate::AppResult;
 
-const HAND_SPRITE_PATH: &str = "resources/hand_sprite.png";
+const HAND_SPRITES: [u8; 11719] = include_bytes!("resources/hand_sprite.png");
 
 const FRAME_SIZE: u32 = 112;
 
@@ -56,9 +57,8 @@ struct FrameParams {
 
 pub fn create_pet_gif(avatar_image: Vec<u8>, username: &str) -> AppResult<InputFile> {
     let avatar = ImageReader::with_format(Cursor::new(avatar_image), ImageFormat::Jpeg).decode()?;
-    let hand_frames = ImageReader::open(HAND_SPRITE_PATH)?
-        .with_guessed_format()?
-        .decode()?;
+    let hand_frames =
+        ImageReader::with_format(Cursor::new(&HAND_SPRITES), ImageFormat::Png).decode()?;
 
     let mut out = Vec::new();
     let mut encoder = gif::Encoder::new(&mut out, FRAME_SIZE as u16, FRAME_SIZE as u16, &[])?;

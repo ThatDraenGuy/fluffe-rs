@@ -2,6 +2,7 @@ _version: 1
 commands:
   /get_furry: "Send a furry picture"
   /pet: "[/pet <@someone>] Pet someone"
+  /shipu: "Send OLEG (🔥) SHIPULIN"
 msg:
   common:
     error:

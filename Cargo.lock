@@ -1032,6 +1032,7 @@ dependencies = [
  "gif",
  "html5tokenizer",
  "image",
+ "include-bytes-plus",
  "log",
  "migration",
  "pretty_env_logger",
@@ -1532,6 +1533,12 @@ dependencies = [
  "zune-core",
  "zune-jpeg",
 ]
+
+[[package]]
+name = "include-bytes-plus"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "122887eb9acb1544bb0308837039dcfab0ec269f88b46fd2c9a84f3ab124d199"
 
 [[package]]
 name = "indexmap"
