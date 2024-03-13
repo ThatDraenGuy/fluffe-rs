@@ -1,7 +1,22 @@
+pub mod handlers;
+pub mod utils;
+use sea_orm::DatabaseConnection;
 use teloxide::{adaptors::DefaultParseMode, prelude::*};
 
 pub mod command;
-pub mod image;
+pub mod images;
+
+#[macro_use]
+extern crate log;
+
+#[macro_use]
+extern crate rust_i18n;
+i18n!("locales", fallback = "ru");
+
+// pub type DbConnectionType = diesel::PgConnection;
+// pub type DbPool = Pool<ConnectionManager<DbConnectionType>>;
+// pub type DbConnection = PooledConnection<ConnectionManager<DbConnectionType>>;
+pub type DbPool = DatabaseConnection;
 
 pub type FluffersBot = DefaultParseMode<Bot>;
 
@@ -13,6 +28,16 @@ pub enum AppError {
     Request(#[from] reqwest::Error),
     #[error(transparent)]
     TeloxideRequest(#[from] teloxide::RequestError),
+    #[error(transparent)]
+    TeloxideDownload(#[from] teloxide::DownloadError),
+    #[error(transparent)]
+    Database(#[from] sea_orm::DbErr),
+    #[error(transparent)]
+    Io(#[from] std::io::Error),
+    #[error(transparent)]
+    Image(#[from] image::ImageError),
+    #[error(transparent)]
+    Gif(#[from] gif::EncodingError),
     #[error("No image")]
     NoImageFound,
 }

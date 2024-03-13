@@ -1,20 +1,26 @@
 use std::sync::Arc;
 
 use teloxide::{
+    net::Download,
+    payloads::{SendAnimationSetters, SendMessageSetters},
     requests::{Requester, ResponseResult},
-    types::Message,
+    types::{Message, UserId},
     utils::command::BotCommands,
 };
 
 use crate::{
-    image::{ImageRepository, ImageRepositoryTrait},
-    AppResult, FluffersBot,
+    images::{pet_gif_creator::create_pet_gif, ImageRepository, ImageRepositoryTrait},
+    utils::{get_language_code, is_mention, DEFAULT_MENTION},
+    AppResult, DbPool, FluffersBot,
 };
+
+use entity::prelude::*;
 
 #[derive(BotCommands, Clone, Debug)]
 #[command(rename_rule = "snake_case")]
 pub enum AppCommands {
     GetFurry,
+    Pet(String),
 }
 
 pub async fn handle_command(
@@ -22,12 +28,14 @@ pub async fn handle_command(
     bot: FluffersBot,
     msg: Message,
     cmd: AppCommands,
+    db: DbPool,
 ) -> ResponseResult<()> {
     let user_id = msg.from().map_or(0, |u| u.id.0);
     let chat_id = msg.chat.id;
 
-    let result = match cmd {
+    let result = match cmd.clone() {
         AppCommands::GetFurry => get_furry(image_repository, bot, &msg).await,
+        AppCommands::Pet(arg) => pet(&db, bot, &msg, &arg).await,
     };
 
     match result {
@@ -47,5 +55,77 @@ async fn get_furry(
 ) -> AppResult<()> {
     let image = image_repository.get_random_image().await?;
     bot.send_photo(msg.chat.id, image).await?;
+    Ok(())
+}
+
+async fn pet(db: &DbPool, bot: FluffersBot, msg: &Message, mention: &str) -> AppResult<()> {
+    if !is_mention(mention) {
+        bot.send_message(
+            msg.chat.id,
+            t!(
+                "msg.common.error.mention_argument",
+                command = "pet",
+                locale = get_language_code(msg),
+                mention = DEFAULT_MENTION,
+            ),
+        )
+        .reply_to_message_id(msg.id)
+        .await?;
+        return Ok(());
+    }
+    let username = mention.split_at(1).1;
+
+    let Some(user) = Users::find_by_username(username).one(db).await? else {
+        bot.send_message(
+            msg.chat.id,
+            t!(
+                "msg.common.error.unknown_username",
+                locale = get_language_code(msg),
+                mention = mention,
+            ),
+        )
+        .reply_to_message_id(msg.id)
+        .await?;
+        return Ok(());
+    };
+    let user_id = UserId(user.get_telegram_id());
+
+    let user_photos = bot.get_user_profile_photos(user_id).await?;
+    let Some(photo) = user_photos.photos.first().and_then(|photo| photo.first()) else {
+        bot.send_message(
+            msg.chat.id,
+            t!(
+                "msg.pet.error.no_photo",
+                locale = get_language_code(msg),
+                mention = mention,
+            ),
+        )
+        .reply_to_message_id(msg.id)
+        .await?;
+        return Ok(());
+    };
+
+    let file = bot.get_file(&photo.file.id).await?;
+
+    let mut avatar = Vec::with_capacity(file.size as usize);
+    bot.download_file(&file.path, &mut avatar).await?;
+
+    let gif = create_pet_gif(avatar, username)?;
+
+    let gif_msg = bot
+        .send_animation(msg.chat.id, gif)
+        .reply_to_message_id(msg.id)
+        .await?;
+    bot.send_message(
+        msg.chat.id,
+        t!(
+            "msg.pet.success",
+            locale = get_language_code(msg),
+            target = mention
+        ),
+    )
+    .reply_to_message_id(gif_msg.id)
+    .await?;
+
     Ok(())
 }
