@@ -9,6 +9,7 @@ msg:
       mention_argument: "To use this command you need to mention someone, like this: \"/%{command} %{mention}\""
       unknown_username: "I don't know who %{mention} is, they don't talk to me(((("
   pet:
+    success: "%{target} was successfully pet! 😺"
     error:
       no_photo: "I can't find avatar of %{mention}((("  
 

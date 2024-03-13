@@ -5,7 +5,7 @@ use fluffe_rs::handlers::*;
 use fluffe_rs::DbPool;
 use fluffe_rs::{
     command::{self, AppCommands},
-    image::{reactor::ReactorRepository, ImageRepository},
+    images::{reactor::ReactorRepository, ImageRepository},
     AppResult, FluffersBot,
 };
 use sea_orm::ConnectOptions;

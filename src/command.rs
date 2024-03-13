@@ -1,17 +1,15 @@
 use std::sync::Arc;
 
-use image::ImageBuffer;
 use teloxide::{
     net::Download,
-    payloads::SendMessageSetters,
+    payloads::{SendAnimationSetters, SendMessageSetters},
     requests::{Requester, ResponseResult},
     types::{Message, UserId},
     utils::command::BotCommands,
 };
-use tokio::fs;
 
 use crate::{
-    image::{ImageRepository, ImageRepositoryTrait},
+    images::{pet_gif_creator::create_pet_gif, ImageRepository, ImageRepositoryTrait},
     utils::{get_language_code, is_mention, DEFAULT_MENTION},
     AppResult, DbPool, FluffersBot,
 };
@@ -60,8 +58,8 @@ async fn get_furry(
     Ok(())
 }
 
-async fn pet(db: &DbPool, bot: FluffersBot, msg: &Message, arg: &str) -> AppResult<()> {
-    if !is_mention(arg) {
+async fn pet(db: &DbPool, bot: FluffersBot, msg: &Message, mention: &str) -> AppResult<()> {
+    if !is_mention(mention) {
         bot.send_message(
             msg.chat.id,
             t!(
@@ -75,14 +73,15 @@ async fn pet(db: &DbPool, bot: FluffersBot, msg: &Message, arg: &str) -> AppResu
         .await?;
         return Ok(());
     }
+    let username = mention.split_at(1).1;
 
-    let Some(user) = Users::find_by_username(arg.split_at(1).1).one(db).await? else {
+    let Some(user) = Users::find_by_username(username).one(db).await? else {
         bot.send_message(
             msg.chat.id,
             t!(
                 "msg.common.error.unknown_username",
                 locale = get_language_code(msg),
-                mention = arg,
+                mention = mention,
             ),
         )
         .reply_to_message_id(msg.id)
@@ -98,7 +97,7 @@ async fn pet(db: &DbPool, bot: FluffersBot, msg: &Message, arg: &str) -> AppResu
             t!(
                 "msg.pet.error.no_photo",
                 locale = get_language_code(msg),
-                mention = arg,
+                mention = mention,
             ),
         )
         .reply_to_message_id(msg.id)
@@ -108,9 +107,25 @@ async fn pet(db: &DbPool, bot: FluffersBot, msg: &Message, arg: &str) -> AppResu
 
     let file = bot.get_file(&photo.file.id).await?;
 
-    let mut image_buf = Vec::with_capacity(file.size as usize);
+    let mut avatar = Vec::with_capacity(file.size as usize);
+    bot.download_file(&file.path, &mut avatar).await?;
 
-    bot.download_file(&file.path, &mut image_buf).await?;
+    let gif = create_pet_gif(avatar, username)?;
+
+    let gif_msg = bot
+        .send_animation(msg.chat.id, gif)
+        .reply_to_message_id(msg.id)
+        .await?;
+    bot.send_message(
+        msg.chat.id,
+        t!(
+            "msg.pet.success",
+            locale = get_language_code(msg),
+            target = mention
+        ),
+    )
+    .reply_to_message_id(gif_msg.id)
+    .await?;
 
     Ok(())
 }

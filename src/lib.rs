@@ -4,7 +4,7 @@ use sea_orm::DatabaseConnection;
 use teloxide::{adaptors::DefaultParseMode, prelude::*};
 
 pub mod command;
-pub mod image;
+pub mod images;
 
 #[macro_use]
 extern crate log;
@@ -32,6 +32,12 @@ pub enum AppError {
     TeloxideDownload(#[from] teloxide::DownloadError),
     #[error(transparent)]
     Database(#[from] sea_orm::DbErr),
+    #[error(transparent)]
+    Io(#[from] std::io::Error),
+    #[error(transparent)]
+    Image(#[from] image::ImageError),
+    #[error(transparent)]
+    Gif(#[from] gif::EncodingError),
     #[error("No image")]
     NoImageFound,
 }
