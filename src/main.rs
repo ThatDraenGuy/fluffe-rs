@@ -8,6 +8,8 @@ use fluffe_rs::{
     images::{reactor::ReactorRepository, ImageRepository},
     AppResult, FluffersBot,
 };
+use migration::Migrator;
+use migration::MigratorTrait;
 use sea_orm::ConnectOptions;
 use sea_orm::Database;
 use teloxide::{prelude::*, types::ParseMode, utils::command::BotCommands};
@@ -75,8 +77,9 @@ async fn setup_commands(bot: &FluffersBot) -> AppResult<()> {
 }
 
 async fn setup_database_pool() -> DbPool {
-    let mut options =
-        ConnectOptions::new(std::env::var("DATABASE_URL").expect("No database url found!"));
+    let database_url = std::env::var("DATABASE_URL").expect("No database url found!");
+
+    let mut options = ConnectOptions::new(&database_url);
     options
         .max_connections(10)
         .min_connections(3)
@@ -87,7 +90,12 @@ async fn setup_database_pool() -> DbPool {
         .sqlx_logging(true)
         .sqlx_logging_level(log::LevelFilter::Trace);
 
-    Database::connect(options)
+    let pool = Database::connect(options)
         .await
-        .expect("Couldn't create database connection!")
+        .expect("Couldn't create database connection!");
+
+    Migrator::up(&pool, None)
+        .await
+        .expect("Couldn't set up migrations");
+    pool
 }

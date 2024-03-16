@@ -1,0 +1,43 @@
+# An example docker-compose file
+services:
+
+  fluffe-rs:
+    image: ghcr.io/thatdraenguy/fluffe-rs:latest
+    container_name: fluffe-rs
+    environment:
+      - DATABASE_URL=postgres://fluffers:fluffers@postgres:5432/fluffers
+    volumes:
+      - .env:/.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - fluffers-network
+
+  postgres:
+    image: postgres:11-alpine
+    environment:
+      - POSTGRES_USER=fluffers
+      - POSTGRES_PASSWORD=fluffers
+      - POSTGRES_DB=fluffers
+    ports:
+      - "54320:5432"
+    volumes:
+      - ./data:/var/lib/postgresql/data
+    healthcheck:
+      test: "pg_isready -d fluffers -U fluffers"
+      interval: 5s
+      timeout: 2s
+      retries: 5
+      start_period: 10s
+    networks:
+      - fluffers-network
+    restart: always
+
+networks:
+  fluffers-network:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.25.0.0/24
