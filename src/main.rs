@@ -51,13 +51,13 @@ async fn main() {
     let image_repository: ImageRepository = ReactorRepository::default().into();
     let image_repository = Arc::new(image_repository);
 
-    Dispatcher::builder(bot, handler)
+    let mut dispatcher = Dispatcher::builder(bot, handler)
         .dependencies(dptree::deps![image_repository, pool])
         .enable_ctrlc_handler()
         .default_handler(handle_unhandled_update_logging)
-        .build()
-        .dispatch()
-        .await;
+        .build();
+    info!("Bot successfully started!");
+    dispatcher.dispatch().await
 }
 
 async fn setup_commands(bot: &FluffersBot) -> AppResult<()> {
