@@ -10,6 +10,7 @@ use teloxide::{
 };
 
 use crate::{
+    built_info,
     images::{pet_gif_creator::create_pet_gif, ImageRepository, ImageRepositoryTrait},
     utils::{get_language_code, is_mention, DEFAULT_MENTION},
     AppResult, DbPool, FluffersBot,
@@ -20,13 +21,14 @@ use entity::prelude::*;
 #[derive(BotCommands, Clone, Debug)]
 #[command(rename_rule = "snake_case")]
 pub enum AppCommands {
-    GetFurry,
+    // GetFurry, // temporarily disabled
     Pet(String),
     Shipu,
+    About,
 }
 
 pub async fn handle_command(
-    image_repository: Arc<ImageRepository>,
+    // image_repository: Arc<ImageRepository>,
     bot: FluffersBot,
     msg: Message,
     cmd: AppCommands,
@@ -36,9 +38,10 @@ pub async fn handle_command(
     let chat_id = msg.chat.id;
 
     let result = match cmd.clone() {
-        AppCommands::GetFurry => get_furry(image_repository, bot, &msg).await,
+        // AppCommands::GetFurry => get_furry(image_repository, bot, &msg).await,
         AppCommands::Pet(arg) => pet(&db, bot, &msg, &arg).await,
         AppCommands::Shipu => shipu(bot, &msg).await,
+        AppCommands::About => about(bot, &msg).await,
     };
 
     match result {
@@ -51,6 +54,7 @@ pub async fn handle_command(
     Ok(())
 }
 
+#[allow(unused)]
 async fn get_furry(
     image_repository: Arc<ImageRepository>,
     bot: FluffersBot,
@@ -139,6 +143,25 @@ async fn shipu(bot: FluffersBot, msg: &Message) -> AppResult<()> {
     bot.send_sticker(msg.chat.id, InputFile::memory(&SHIPU_STICKER as &[u8]))
         .reply_to_message_id(msg.id.0)
         .await?;
+
+    Ok(())
+}
+
+async fn about(bot: FluffersBot, msg: &Message) -> AppResult<()> {
+    let last_update = built::util::strptime(built_info::BUILT_TIME_UTC).format("%d-%m-%Y %H:%M:%S");
+
+    bot.send_message(
+        msg.chat.id,
+        t!(
+            "msg.about.info",
+            locale = get_language_code(msg),
+            version = built_info::PKG_VERSION,
+            authors = built_info::PKG_AUTHORS,
+            last_update = last_update
+        ),
+    )
+    .reply_to_message_id(msg.id)
+    .await?;
 
     Ok(())
 }

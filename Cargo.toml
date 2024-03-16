@@ -1,7 +1,12 @@
 [package]
 name = "fluffe-rs"
 version = "0.1.0"
+authors = ["ThatDraenGuy"]
 edition = "2021"
+build = "build.rs"
+
+[build-dependencies]
+built = { version = "0.7.1", features = [ "chrono" ] } 
 
 [workspace]
 members = [".", "entity", "migration"]
@@ -27,6 +32,7 @@ enum_dispatch = "0.3.12"
 gif = "0.13.1"
 image = { version = "0.25.0", default-features = false, features = ["png", "jpeg"] } 
 include-bytes-plus = "1.1.0"
+built = { version = "0.7.1", features = [ "chrono" ] }
 
 [dependencies.sea-orm-migration]
 version = "0.12"

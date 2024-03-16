@@ -13,9 +13,10 @@ extern crate log;
 extern crate rust_i18n;
 i18n!("locales", fallback = "ru");
 
-// pub type DbConnectionType = diesel::PgConnection;
-// pub type DbPool = Pool<ConnectionManager<DbConnectionType>>;
-// pub type DbConnection = PooledConnection<ConnectionManager<DbConnectionType>>;
+pub mod built_info {
+    include!(concat!(env!("OUT_DIR"), "/built.rs"));
+}
+
 pub type DbPool = DatabaseConnection;
 
 pub type FluffersBot = DefaultParseMode<Bot>;

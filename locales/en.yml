@@ -3,6 +3,7 @@ commands:
   /get_furry: "Send a furry picture"
   /pet: "[/pet <@someone>] Pet someone"
   /shipu: "Send OLEG (🔥) SHIPULIN"
+  /about: "Information about the bot"
 msg:
   common:
     error:
@@ -12,8 +13,13 @@ msg:
   pet:
     success: "%{target} was successfully pet! 😺"
     error:
-      no_photo: "I can't find avatar of %{mention}((("  
-
+      no_photo: "I can't find avatar of %{mention}((("
+  about:
+    info: |
+      Fluffe-rs bot: a weird bot for a weird chat.
+      Version: %{version}
+      Created by: %{authors}
+      Last update: %{last_update}
   femboy:
     common:
       error:
