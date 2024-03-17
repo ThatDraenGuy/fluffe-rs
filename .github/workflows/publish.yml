@@ -8,7 +8,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.actor }}/fluffe-rs
+  # IMAGE_NAME: ${{ github.actor }}/fluffe-rs
 
 jobs:
     publish:
@@ -18,13 +18,16 @@ jobs:
 
         steps:
         - uses: actions/checkout@v3
+        - name: setup_image_name
+          run: |
+            echo "IMAGE_NAME=${GITHUB_ACTOR,,}/fluffe-rs" >>${GITHUB_ENV}
         - name: Login
           run: |
             echo ${{ secrets.PAT }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
         - name: Build and Publish
           run: |
-            docker build . --tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest --tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}
-            docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+            docker build . --tag ${{ env.REGISTRY }}/${IMAGE_NAME}:latest --tag ${{ env.REGISTRY }}/${IMAGE_NAME}:${{ github.ref_name }}
+            docker push ${{ env.REGISTRY }}/${IMAGE_NAME}
 
     deploy:
         needs: publish
