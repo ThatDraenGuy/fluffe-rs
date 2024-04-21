@@ -41,6 +41,7 @@ msg:
       Version: %{version}
       Created by: %{authors}
       Last update: %{last_update}
+      Source: %{source}
   femboy:
     common:
       error:

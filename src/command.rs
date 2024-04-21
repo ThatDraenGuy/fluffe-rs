@@ -11,7 +11,7 @@ use teloxide::{
 
 use crate::{
     built_info,
-    consts::{DEFAULT_MENTION, SHIPU_STICKER},
+    consts::{DEFAULT_MENTION, SHIPU_STICKER, SOURCE_URL},
     images::{pet_gif_creator::create_pet_gif, ImageRepository, ImageRepositoryTrait},
     utils::*,
     AppError, AppResult, ClientError, DbPool, FluffersBot,
@@ -295,7 +295,8 @@ async fn about(bot: &FluffersBot, msg: &Message) -> AppResult<()> {
             locale = get_language_code(msg),
             version = built_info::PKG_VERSION,
             authors = built_info::PKG_AUTHORS,
-            last_update = last_update
+            last_update = last_update,
+            source = SOURCE_URL,
         ),
     )
     .reply_to_message_id(msg.id)
