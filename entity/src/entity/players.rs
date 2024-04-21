@@ -1,4 +1,4 @@
-use sea_orm::prelude::*;
+use sea_orm::{prelude::*, Order, QueryOrder, QuerySelect};
 use teloxide::types::{ChatId, UserId};
 
 use crate::{
@@ -29,5 +29,11 @@ impl Players {
         Self::find_by_chat_id(chat_id)
             .inner_join(Users)
             .filter(users::Column::Username.eq(username))
+    }
+
+    pub fn find_top_in_chat(chat_id: ChatId, col: Column, limit: u64) -> Select<Players> {
+        Self::find_by_chat_id(chat_id)
+            .order_by(col, Order::Desc)
+            .limit(limit)
     }
 }

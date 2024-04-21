@@ -3,6 +3,7 @@ commands:
   /get_furry: "Send a furry picture"
   /pet: "[/pet <@someone>] Pet someone"
   /my_stats: "Get your stats"
+  /top_pets: "Get top petters/petted in the chat"
   /shipu: "Send OLEG (🔥) SHIPULIN"
   /about: "Information about the bot"
 msg:
@@ -27,6 +28,13 @@ msg:
       - pets given: %{pets_given}
       - pets received: %{pets_received}
       - fluffy coins: %{coins}
+  top_pets:
+    success: |
+      Top pets received:
+      %{received_list}
+
+      Top pets given:
+      %{given_list}
   about:
     info: |
       Fluffe-rs bot: a weird bot for a weird chat.

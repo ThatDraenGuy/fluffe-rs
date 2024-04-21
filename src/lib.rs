@@ -72,3 +72,15 @@ impl<T, R> AppResultExt<T, R> for AppResult<(T, Option<R>)> {
         self.and_then(|tup| tup.1.map(|val| (tup.0, val)).ok_or(err))
     }
 }
+
+pub trait VecTupleExt<T, R> {
+    fn map_tuple_with_options(self, err: AppError) -> AppResult<Vec<(T, R)>>;
+}
+impl<T, R> VecTupleExt<T, R> for Vec<(T, Option<R>)> {
+    fn map_tuple_with_options(self, err: AppError) -> AppResult<Vec<(T, R)>> {
+        self.into_iter()
+            .map(|tup| tup.1.map(|val| (tup.0, val)))
+            .collect::<Option<Vec<(T, R)>>>()
+            .ok_or(err)
+    }
+}

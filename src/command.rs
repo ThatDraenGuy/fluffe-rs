@@ -13,7 +13,7 @@ use crate::{
     built_info,
     consts::{DEFAULT_MENTION, SHIPU_STICKER},
     images::{pet_gif_creator::create_pet_gif, ImageRepository, ImageRepositoryTrait},
-    utils::{find_msg_player, find_player_by_username, get_language_code, resolve_mention},
+    utils::*,
     AppError, AppResult, ClientError, DbPool, FluffersBot,
 };
 
@@ -23,6 +23,7 @@ pub enum AppCommands {
     // GetFurry, // temporarily disabled
     Pet(String),
     MyStats,
+    TopPets,
     Shipu,
     About,
 }
@@ -42,6 +43,7 @@ pub async fn handle_command(
         // AppCommands::GetFurry => get_furry(image_repository, &bot, &msg).await,
         AppCommands::Pet(arg) => pet(&db, &bot, &me, &msg, &arg).await,
         AppCommands::MyStats => my_stats(&db, &bot, &msg).await,
+        AppCommands::TopPets => top_pets(&db, &bot, &msg).await,
         AppCommands::Shipu => shipu(&bot, &msg).await,
         AppCommands::About => about(&bot, &msg).await,
     };
@@ -245,6 +247,28 @@ async fn my_stats(db: &DbPool, bot: &FluffersBot, msg: &Message) -> AppResult<()
             pets_received = player.pets_received,
             pets_given = player.pets_given,
             coins = player.coins
+        ),
+    )
+    .reply_to_message_id(msg.id)
+    .await?;
+
+    Ok(())
+}
+
+async fn top_pets(db: &DbPool, bot: &FluffersBot, msg: &Message) -> AppResult<()> {
+    let top_received = find_top_pets_received(db, msg.chat.id).await?;
+    let top_given = find_top_pets_given(db, msg.chat.id).await?;
+
+    format_as_top_list(&top_received, |player| player.pets_received.to_string());
+
+    bot.send_message(
+        msg.chat.id,
+        t!(
+            "msg.top_pets.success",
+            locale = get_language_code(msg),
+            received_list =
+                format_as_top_list(&top_received, |player| player.pets_received.to_string()),
+            given_list = format_as_top_list(&top_given, |player| player.pets_given.to_string())
         ),
     )
     .reply_to_message_id(msg.id)
