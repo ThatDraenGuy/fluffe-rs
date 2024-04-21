@@ -38,7 +38,7 @@ async fn main() {
         .expect("Couldn't setup commands!");
 
     let handler = dptree::entry()
-        .chain(dptree::filter_async(handle_update_logging))
+        .chain(dptree::filter_async(update_logging_handler))
         .chain(dptree::filter_async(username_storage_handler))
         .branch(
             Update::filter_message().branch(
@@ -54,7 +54,7 @@ async fn main() {
     let mut dispatcher = Dispatcher::builder(bot, handler)
         .dependencies(dptree::deps![image_repository, pool])
         .enable_ctrlc_handler()
-        .default_handler(handle_unhandled_update_logging)
+        .default_handler(unhandled_update_logging_handler)
         .build();
     info!("Bot successfully started!");
     dispatcher.dispatch().await

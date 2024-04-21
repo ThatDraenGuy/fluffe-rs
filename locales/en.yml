@@ -2,18 +2,31 @@ _version: 1
 commands:
   /get_furry: "Send a furry picture"
   /pet: "[/pet <@someone>] Pet someone"
+  /my_stats: "Get your stats"
   /shipu: "Send OLEG (🔥) SHIPULIN"
   /about: "Information about the bot"
 msg:
   common:
     error:
-      db_err: "Error when working with database 😡😡😡. Catch the error message and go tell DraenGuy that he's a loser: %{msg}"
-      mention_argument: "To use this command you need to mention someone, like this: \"/%{command} %{mention}\""
-      unknown_username: "I don't know who %{mention} is, they don't talk to me(((("
+      server:
+        db_err: "Error when working with database 😡😡😡. Catch the error message and go tell DraenGuy that he's a loser: %{msg}"
+        unknown_player: "Sowwy, this user never played with me in this chat 😿 (if they write anything here I will gladly accept them 😺)"
+        unknown_err: "Something went wrong, sowwy 😿. Here's the error message: %{msg}"
+      client:
+        mention_argument: "To use this command you need to mention someone, like this: \"/%{command} %{mention}\""
+        unknown_username: "I don't know who @%{mention} is, they don't talk to me(((("
   pet:
-    success: "%{target} was successfully pet! 😺"
+    success: "Petting successful! %{target} has been pet %{num} times now! 😺"
     error:
       no_photo: "I can't find avatar of %{mention}((("
+      me: "Petting me is forbiwwen 😾"
+      self: "You can't pet yourself, %{mention}!"
+  my_stats:
+    success: |
+      %{target}'s stats:
+      - pets given: %{pets_given}
+      - pets received: %{pets_received}
+      - fluffy coins: %{coins}
   about:
     info: |
       Fluffe-rs bot: a weird bot for a weird chat.

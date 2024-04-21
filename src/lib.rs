@@ -1,10 +1,11 @@
-pub mod handlers;
-pub mod utils;
 use sea_orm::DatabaseConnection;
 use teloxide::{adaptors::DefaultParseMode, prelude::*};
 
 pub mod command;
+pub mod consts;
+pub mod handlers;
 pub mod images;
+pub mod utils;
 
 #[macro_use]
 extern crate log;
@@ -39,8 +40,35 @@ pub enum AppError {
     Image(#[from] image::ImageError),
     #[error(transparent)]
     Gif(#[from] gif::EncodingError),
+    #[error("Unknown chat")]
+    UnknownChat,
+    #[error("Unknown user")]
+    UnknownUser,
+    #[error("Unknown player")]
+    UnknownPlayer,
+    #[error("No sender")]
+    NonExistentSender,
     #[error("No image")]
     NoImageFound,
+    #[error(transparent)]
+    ClientError(#[from] ClientError),
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum ClientError {
+    #[error("No mention whe using command {0}")]
+    NoMention(&'static str),
+    #[error("No user for username {0} found")]
+    NoUser(String),
 }
 
 pub type AppResult<T> = Result<T, AppError>;
+
+pub trait AppResultExt<T, R> {
+    fn map_tuple_with_option(self, err: AppError) -> AppResult<(T, R)>;
+}
+impl<T, R> AppResultExt<T, R> for AppResult<(T, Option<R>)> {
+    fn map_tuple_with_option(self, err: AppError) -> AppResult<(T, R)> {
+        self.and_then(|tup| tup.1.map(|val| (tup.0, val)).ok_or(err))
+    }
+}
