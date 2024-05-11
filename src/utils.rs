@@ -112,7 +112,7 @@ where
             format!(
                 "{acc}{index}. {mention} - {value}\n",
                 index = index + 1,
-                mention = user.mention().as_deref().unwrap_or("Someone"),
+                mention = user.username.as_deref().unwrap_or("Someone"),
                 value = top_value_getter(player)
             )
         })
