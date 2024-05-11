@@ -33,6 +33,7 @@ gif = "0.13.1"
 image = { version = "0.25.0", default-features = false, features = ["png", "jpeg"] } 
 include-bytes-plus = "1.1.0"
 built = { version = "0.7.1", features = [ "chrono" ] }
+chrono = "0.4.38"
 
 [dependencies.sea-orm-migration]
 version = "0.12"

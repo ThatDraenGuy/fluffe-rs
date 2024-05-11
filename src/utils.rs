@@ -1,13 +1,12 @@
-use entity::{
-    gen::{chats, players, users},
-    prelude::*,
+use teloxide::{
+    payloads::SendMessageSetters,
+    requests::{Requester, ResponseResult},
+    types::{ChatId, Message},
 };
-use sea_orm::ConnectionTrait;
-use teloxide::types::{ChatId, Message};
 
 use crate::{
-    consts::{DEFAULT_LOCALE, DEFAULT_TOP_LIMIT},
-    AppError, AppResult, AppResultExt, ClientError, VecTupleExt,
+    consts::{DEFAULT_LOCALE, DEFAULT_MENTION},
+    AppError, AppResult, ClientError, FluffersBot,
 };
 
 pub fn is_mention(arg: &str) -> bool {
@@ -28,92 +27,49 @@ pub fn get_language_code(msg: &Message) -> &str {
         .map_or(DEFAULT_LOCALE, |code| code.as_str())
 }
 
-pub async fn find_user(conn: &impl ConnectionTrait, username: &str) -> AppResult<users::Model> {
-    Ok(Users::find_by_username(username)
-        .one(conn)
-        .await?
-        .ok_or(ClientError::NoUser(username.to_owned()))?)
-}
-
-pub async fn find_msg_context(
-    conn: &impl ConnectionTrait,
-    msg: &Message,
-) -> AppResult<(users::Model, chats::Model)> {
-    Ok((
-        Users::find_by_telegram_id(msg.from().ok_or(AppError::NonExistentSender)?.id)
-            .one(conn)
-            .await?
-            .ok_or(AppError::UnknownUser)?,
-        Chats::find_by_telegram_id(msg.chat.id)
-            .one(conn)
-            .await?
-            .ok_or(AppError::UnknownChat)?,
-    ))
-}
-
-pub async fn find_msg_player(
-    conn: &impl ConnectionTrait,
-    msg: &Message,
-) -> AppResult<(players::Model, users::Model)> {
-    Players::find_by_chat_user(
-        msg.chat.id,
-        msg.from().ok_or(AppError::NonExistentSender)?.id,
-    )
-    .select_also(Users)
-    .one(conn)
-    .await?
-    .ok_or(AppError::UnknownPlayer)
-    .map_tuple_with_option(AppError::UnknownUser)
-}
-pub async fn find_player_by_username(
-    conn: &impl ConnectionTrait,
+pub async fn send_error_msg(
+    bot: &FluffersBot,
     chat_id: ChatId,
-    username: &str,
-) -> AppResult<(players::Model, users::Model)> {
-    Players::find_by_chat_username(chat_id, username)
-        .select_also(Users)
-        .one(conn)
-        .await?
-        .ok_or(AppError::UnknownPlayer)
-        .map_tuple_with_option(AppError::UnknownUser)
-}
+    locale: &str,
+    src: Option<&Message>,
+    e: &AppError,
+) -> ResponseResult<()> {
+    let mut send = bot.send_message(
+        chat_id,
+        match e {
+            AppError::ClientError(cli_err) => match cli_err {
+                ClientError::NoMention(cmd) => t!(
+                    "msg.common.error.client.mention_argument",
+                    command = cmd,
+                    locale = locale,
+                    mention = DEFAULT_MENTION
+                ),
+                ClientError::NoUser(username) => t!(
+                    "msg.common.error.client.unknown_username",
+                    locale = locale,
+                    mention = username,
+                ),
+            },
+            AppError::UnknownPlayer => {
+                t!("msg.common.error.server.unknown_player", locale = locale,)
+            }
+            AppError::Database(db_err) => t!(
+                "msg.common.error.server.db_err",
+                locale = locale,
+                msg = db_err
+            ),
+            e => t!(
+                "msg.common.error.server.unknown_err",
+                locale = locale,
+                msg = e
+            ),
+        },
+    );
 
-pub async fn find_top_pets_given(
-    conn: &impl ConnectionTrait,
-    chat_id: ChatId,
-) -> AppResult<Vec<(players::Model, users::Model)>> {
-    Players::find_top_in_chat(chat_id, players::Column::PetsGiven, DEFAULT_TOP_LIMIT)
-        .inner_join(Users)
-        .select_also(Users)
-        .all(conn)
-        .await?
-        .map_tuple_with_options(AppError::UnknownUser)
-}
-pub async fn find_top_pets_received(
-    conn: &impl ConnectionTrait,
-    chat_id: ChatId,
-) -> AppResult<Vec<(players::Model, users::Model)>> {
-    Players::find_top_in_chat(chat_id, players::Column::PetsReceived, DEFAULT_TOP_LIMIT)
-        .inner_join(Users)
-        .select_also(Users)
-        .all(conn)
-        .await?
-        .map_tuple_with_options(AppError::UnknownUser)
-}
+    if let Some(msg) = src {
+        send = send.reply_to_message_id(msg.id);
+    }
 
-pub fn format_as_top_list<T, F>(items: &[(T, users::Model)], top_value_getter: F) -> String
-where
-    F: Fn(&T) -> String,
-{
-    items
-        .iter()
-        .enumerate()
-        .fold(String::new(), |acc, (index, (player, user))| {
-            format!(
-                "{acc}{index}. {mention} - {value}\n",
-                index = index + 1,
-                mention = user.mention().as_deref().unwrap_or("Someone"),
-                value = top_value_getter(player)
-            )
-        })
+    send.await?;
+    Ok(())
 }

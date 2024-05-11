@@ -12,6 +12,7 @@ pub struct Model {
     pub coins: i64,
     pub pets_received: i64,
     pub pets_given: i64,
+    pub femboy_wins: i64,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

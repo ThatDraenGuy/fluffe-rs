@@ -9,6 +9,7 @@ pub struct Model {
     pub id: i64,
     #[sea_orm(unique)]
     pub telegram_id: i64,
+    pub femboy_time: Time,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

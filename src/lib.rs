@@ -5,6 +5,7 @@ pub mod command;
 pub mod consts;
 pub mod handlers;
 pub mod images;
+pub mod service;
 pub mod utils;
 
 #[macro_use]

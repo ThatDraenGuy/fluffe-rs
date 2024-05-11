@@ -13,6 +13,10 @@ impl Players {
             .filter(chats::Column::TelegramId.eq(chat_id.0))
     }
 
+    pub fn find_by_chat(chat_id: i64) -> Select<Players> {
+        Self::find().filter(Column::ChatId.eq(chat_id))
+    }
+
     pub fn find_by_logical_key(chat_id: i64, user_id: i64) -> Select<Players> {
         Self::find()
             .filter(Column::ChatId.eq(chat_id))

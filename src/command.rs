@@ -11,10 +11,11 @@ use teloxide::{
 
 use crate::{
     built_info,
-    consts::{DEFAULT_MENTION, SHIPU_STICKER, SOURCE_URL},
+    consts::{SHIPU_STICKER, SOURCE_URL},
     images::{pet_gif_creator::create_pet_gif, ImageRepository, ImageRepositoryTrait},
+    service::player::*,
     utils::*,
-    AppError, AppResult, ClientError, DbPool, FluffersBot,
+    AppError, AppResult, DbPool, FluffersBot,
 };
 
 #[derive(BotCommands, Clone, Debug)]
@@ -61,70 +62,7 @@ pub async fn handle_command(
                 );
             }
 
-            match &e {
-                AppError::ClientError(cli_err) => match cli_err {
-                    ClientError::NoUser(username) => {
-                        bot.send_message(
-                            msg.chat.id,
-                            t!(
-                                "msg.common.error.client.unknown_username",
-                                locale = get_language_code(&msg),
-                                mention = username,
-                            ),
-                        )
-                        .reply_to_message_id(msg.id)
-                        .await?;
-                    }
-                    ClientError::NoMention(command) => {
-                        bot.send_message(
-                            msg.chat.id,
-                            t!(
-                                "msg.common.error.client.mention_argument",
-                                command = command,
-                                locale = get_language_code(&msg),
-                                mention = DEFAULT_MENTION,
-                            ),
-                        )
-                        .reply_to_message_id(msg.id)
-                        .await?;
-                    }
-                },
-                AppError::UnknownPlayer => {
-                    bot.send_message(
-                        msg.chat.id,
-                        t!(
-                            "msg.common.error.server.unknown_player",
-                            locale = get_language_code(&msg),
-                        ),
-                    )
-                    .reply_to_message_id(msg.id)
-                    .await?;
-                }
-                AppError::Database(db_err) => {
-                    bot.send_message(
-                        msg.chat.id,
-                        t!(
-                            "msg.common.error.server.db_err",
-                            locale = get_language_code(&msg),
-                            msg = db_err
-                        ),
-                    )
-                    .reply_to_message_id(msg.id)
-                    .await?;
-                }
-                e => {
-                    bot.send_message(
-                        msg.chat.id,
-                        t!(
-                            "msg.common.error.server.unknown_err",
-                            locale = get_language_code(&msg),
-                            msg = e
-                        ),
-                    )
-                    .reply_to_message_id(msg.id)
-                    .await?;
-                }
-            }
+            send_error_msg(&bot, chat_id, get_language_code(&msg), Some(&msg), &e).await?;
         }
     }
 
