@@ -2,7 +2,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use fluffe_rs::handlers::*;
-use fluffe_rs::service::femboy::{initialize_femboy_service, FemboyServiceCtx};
+use fluffe_rs::service::femboy::{FemboyService, FemboyServiceCtx};
 use fluffe_rs::DbPool;
 use fluffe_rs::{
     command::{self, AppCommands},
@@ -52,10 +52,12 @@ async fn main() {
     let image_repository: ImageRepository = ReactorRepository::default().into();
     let image_repository = Arc::new(image_repository);
 
-    initialize_femboy_service(FemboyServiceCtx {
+    let femboy_service = FemboyService::init(FemboyServiceCtx {
         db: pool.clone(),
         bot: bot.clone(),
-    });
+    })
+    .await
+    .unwrap();
 
     let mut dispatcher = Dispatcher::builder(bot, handler)
         .dependencies(dptree::deps![image_repository, pool])

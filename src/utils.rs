@@ -1,7 +1,7 @@
 use teloxide::{
     payloads::SendMessageSetters,
     requests::{Requester, ResponseResult},
-    types::{ChatId, Message},
+    types::{ChatId, Message, ReplyParameters},
 };
 
 use crate::{
@@ -22,7 +22,8 @@ pub fn resolve_mention<'a>(arg: &'a str, cmd: &'static str) -> AppResult<&'a str
 }
 
 pub fn get_language_code(msg: &Message) -> &str {
-    msg.from()
+    msg.from
+        .as_ref()
         .and_then(|user| user.language_code.as_ref())
         .map_or(DEFAULT_LOCALE, |code| code.as_str())
 }
@@ -67,7 +68,7 @@ pub async fn send_error_msg(
     );
 
     if let Some(msg) = src {
-        send = send.reply_to_message_id(msg.id);
+        send = send.reply_parameters(ReplyParameters::new(msg.id));
     }
 
     send.await?;

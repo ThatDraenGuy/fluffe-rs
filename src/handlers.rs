@@ -13,8 +13,8 @@ use teloxide::types::User;
 use crate::{AppResult, DbPool};
 
 pub async fn unhandled_update_logging_handler(upd: Arc<Update>) {
-    let update_id = upd.id;
-    if let Some(user) = upd.user() {
+    let update_id = upd.id.0;
+    if let Some(user) = upd.from() {
         let user_id = user.id;
         if let Some(chat) = upd.chat() {
             let chat_id = chat.id;
@@ -31,9 +31,9 @@ pub async fn unhandled_update_logging_handler(upd: Arc<Update>) {
 }
 
 pub async fn update_logging_handler(upd: Update) -> bool {
-    let update_id = upd.id;
+    let update_id = upd.id.0;
 
-    let Some(user) = upd.user() else {
+    let Some(user) = upd.from() else {
         if let Some(chat) = upd.chat() {
             let chat_id = chat.id;
             info!("Received update [{update_id}]: chat: [{chat_id}]");
@@ -63,7 +63,7 @@ pub async fn username_storage_handler(upd: Update, db: DbPool) -> bool {
 }
 
 async fn handle_username_storage(upd: Update, db: DbPool) -> AppResult<()> {
-    let Some(user) = upd.user() else {
+    let Some(user) = upd.from() else {
         return Ok(());
     };
 

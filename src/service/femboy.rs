@@ -1,10 +1,10 @@
+use std::collections::HashMap;
+
 use crate::consts::DEFAULT_LOCALE;
 use crate::utils::send_error_msg;
 use crate::{AppError, AppResultExt};
 use crate::{AppResult, DbPool, FluffersBot};
-use chrono::NaiveTime;
-use chrono::TimeDelta;
-use chrono::{Duration, Local};
+use chrono::Timelike;
 use entity::gen::users;
 use entity::{
     gen::{chats, players},
@@ -12,18 +12,55 @@ use entity::{
 };
 use rand::Rng;
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, ConnectionTrait, EntityTrait, Order, QueryFilter, QueryOrder,
-    QuerySelect, TransactionTrait,
+    ActiveModelTrait, ConnectionTrait, EntityTrait, QueryOrder, QuerySelect, TransactionTrait,
 };
 use sea_orm::{IntoActiveModel, PaginatorTrait, Set};
 use teloxide::requests::Requester;
 use teloxide::types::ChatId;
-use tokio::time::Duration as TokioDuration;
-use tokio::time::{sleep, sleep_until};
+use tokio::task::JoinHandle;
+use tokio_schedule::{every, Job};
 
-const BATCH_SIZE: u64 = 10;
-const MIN_TIME_DELTA: TimeDelta = TimeDelta::seconds(1);
-const NO_JOB_TIMEOUT: TokioDuration = TokioDuration::from_secs(60 * 60);
+type ScheduledGames = HashMap<ChatId, JoinHandle<()>>;
+
+pub struct FemboyService {
+    scheduled_games: ScheduledGames,
+    ctx: FemboyServiceCtx,
+}
+impl FemboyService {
+    pub async fn init(ctx: FemboyServiceCtx) -> AppResult<Self> {
+        Ok(Self {
+            scheduled_games: Self::schedule_games(&ctx).await?,
+            ctx,
+        })
+    }
+
+    async fn schedule_games(ctx: &FemboyServiceCtx) -> AppResult<ScheduledGames> {
+        let chats = Chats::find().all(&ctx.db).await?;
+        let mut scheduled_games = ScheduledGames::new();
+        for chat in chats.into_iter() {
+            let ctx_bind = ctx.clone();
+            let scheduled = every(1)
+                .day()
+                .at(
+                    chat.femboy_time.hour(),
+                    chat.femboy_time.minute(),
+                    chat.femboy_time.second(),
+                )
+                .perform(move || {
+                    let ctx_bind = ctx_bind.clone();
+                    async move {
+                        perform_femboy_selection(ctx_bind.clone(), ChatId(chat.telegram_id)).await;
+                    }
+                });
+            scheduled_games.insert(ChatId(chat.telegram_id), tokio::spawn(scheduled));
+        }
+        todo!()
+    }
+
+    pub fn update_chat_schedule(&self, chat: chats::Model) {
+        todo!()
+    }
+}
 
 #[derive(Clone)]
 pub struct FemboyServiceCtx {
@@ -31,68 +68,21 @@ pub struct FemboyServiceCtx {
     pub bot: FluffersBot,
 }
 
-pub fn initialize_femboy_service(ctx: FemboyServiceCtx) {
-    tokio::spawn(schedule_femboys(ctx));
-}
-
-async fn schedule_femboys(ctx: FemboyServiceCtx) -> AppResult<()> {
-    let mut time = Local::now().time();
-    loop {
-        // let current_time = Local::now().time();
-        let batch = find_chats_batch(&ctx.db, time).await?;
-
-        if batch.is_empty() {
-            info!("No femboy selections to schedule; sleeping");
-            let now = Local::now();
-            let midnight = (now + Duration::days(1))
-                .date_naive()
-                .and_hms_opt(0, 0, 0)
-                .unwrap();
-            sleep(TokioDuration::from_secs(
-                midnight.signed_duration_since(now).num_seconds() as u64,
-            ));
-
-            // if time == NaiveTime::MIN {
-            //     // no chats to schedule; sleeping
-            //     sleep(NO_JOB_TIMEOUT).await;
-            // } else {
-            //     time = NaiveTime::MIN;
-            // }
-        }
-
-        for chat in batch.into_iter() {
-            let delay = chat.femboy_time - Local::now().time();
-            // immediately handle job if delay is small
-            if delay > MIN_TIME_DELTA {
-                info!("Scheduling next femboy selection at {}", chat.femboy_time);
-                sleep(TokioDuration::from_secs(delay.num_seconds() as u64)).await;
-            }
-            time = chat.femboy_time;
-            tokio::spawn(perform_femboy_selection(ctx.clone(), chat));
-        }
-    }
-}
-
-async fn find_chats_batch(db: &DbPool, time: NaiveTime) -> AppResult<Vec<chats::Model>> {
-    Ok(Chats::find()
-        .filter(chats::Column::FemboyTime.gt(time))
-        .order_by(chats::Column::FemboyTime, Order::Asc)
-        .limit(BATCH_SIZE)
-        .all(db)
-        .await?)
-}
-
-async fn perform_femboy_selection(ctx: FemboyServiceCtx, chat: chats::Model) -> AppResult<()> {
+async fn perform_femboy_selection(ctx: FemboyServiceCtx, telegram_id: ChatId) -> AppResult<()> {
     info!(
         "Starting femboy selection in chat with ID [{}]",
-        chat.telegram_id
+        telegram_id
     );
+    let t = ctx.db.begin().await?;
+    let chat = Chats::find_by_telegram_id(telegram_id)
+        .one(&t)
+        .await?
+        .ok_or(AppError::UnknownChat)?;
     let bot = ctx.bot;
     let chat_id = ChatId(chat.telegram_id);
     bot.send_message(chat_id, t!("msg.femboy.start", locale = DEFAULT_LOCALE))
         .await?;
 
-    let t = ctx.db.begin().await?;
     match choose_femboy(&t, chat).await {
         Err(e) => send_error_msg(&bot, chat_id, DEFAULT_LOCALE, None, &e).await?,
         Ok(winner) => {
@@ -108,6 +98,7 @@ async fn perform_femboy_selection(ctx: FemboyServiceCtx, chat: chats::Model) -> 
             .await?;
         }
     };
+    t.commit().await?;
 
     Ok(())
 }

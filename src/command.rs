@@ -5,7 +5,7 @@ use teloxide::{
     net::Download,
     payloads::{SendAnimationSetters, SendMessageSetters, SendStickerSetters},
     requests::{Requester, ResponseResult},
-    types::{InputFile, Me, Message},
+    types::{InputFile, Me, Message, ReplyParameters},
     utils::command::BotCommands,
 };
 
@@ -37,7 +37,7 @@ pub async fn handle_command(
     cmd: AppCommands,
     db: DbPool,
 ) -> ResponseResult<()> {
-    let user_id = msg.from().map_or(0, |u| u.id.0);
+    let user_id = msg.from.as_ref().map_or(0, |u| u.id.0);
     let chat_id = msg.chat.id;
 
     let result = match cmd.clone() {
@@ -95,7 +95,7 @@ async fn pet(
             msg.chat.id,
             t!("msg.pet.error.me", locale = get_language_code(msg)),
         )
-        .reply_to_message_id(msg.id)
+        .reply_parameters(ReplyParameters::new(msg.id))
         .await?;
         return Ok(());
     }
@@ -114,7 +114,7 @@ async fn pet(
                 mention = mention,
             ),
         )
-        .reply_to_message_id(msg.id)
+        .reply_parameters(ReplyParameters::new(msg.id))
         .await?;
         return Ok(());
     }
@@ -131,7 +131,7 @@ async fn pet(
                 mention = mention,
             ),
         )
-        .reply_to_message_id(msg.id)
+        .reply_parameters(ReplyParameters::new(msg.id))
         .await?;
         return Ok(());
     };
@@ -145,7 +145,7 @@ async fn pet(
 
     let gif_msg = bot
         .send_animation(msg.chat.id, gif)
-        .reply_to_message_id(msg.id)
+        .reply_parameters(ReplyParameters::new(msg.id))
         .await?;
 
     let mut source_player = source_player.into_active_model();
@@ -163,7 +163,7 @@ async fn pet(
             num = target_player.pets_received.as_ref()
         ),
     )
-    .reply_to_message_id(gif_msg.id)
+    .reply_parameters(ReplyParameters::new(msg.id))
     .await?;
 
     source_player.save(&t).await?;
@@ -187,7 +187,7 @@ async fn my_stats(db: &DbPool, bot: &FluffersBot, msg: &Message) -> AppResult<()
             coins = player.coins
         ),
     )
-    .reply_to_message_id(msg.id)
+    .reply_parameters(ReplyParameters::new(msg.id))
     .await?;
 
     Ok(())
@@ -209,7 +209,7 @@ async fn top_pets(db: &DbPool, bot: &FluffersBot, msg: &Message) -> AppResult<()
             given_list = format_as_top_list(&top_given, |player| player.pets_given.to_string())
         ),
     )
-    .reply_to_message_id(msg.id)
+    .reply_parameters(ReplyParameters::new(msg.id))
     .await?;
 
     Ok(())
@@ -217,7 +217,7 @@ async fn top_pets(db: &DbPool, bot: &FluffersBot, msg: &Message) -> AppResult<()
 
 async fn shipu(bot: &FluffersBot, msg: &Message) -> AppResult<()> {
     bot.send_sticker(msg.chat.id, InputFile::memory(&SHIPU_STICKER as &[u8]))
-        .reply_to_message_id(msg.id.0)
+        .reply_parameters(ReplyParameters::new(msg.id))
         .await?;
 
     Ok(())
@@ -237,7 +237,7 @@ async fn about(bot: &FluffersBot, msg: &Message) -> AppResult<()> {
             source = SOURCE_URL,
         ),
     )
-    .reply_to_message_id(msg.id)
+    .reply_parameters(ReplyParameters::new(msg.id))
     .await?;
 
     Ok(())
